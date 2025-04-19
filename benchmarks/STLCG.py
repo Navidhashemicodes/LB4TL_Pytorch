@@ -9,7 +9,7 @@ import torch
 import time
 import sys
 import pathlib
-import comparison.stlcgpp.formula as stlcg
+import benchmarks.stlcg.stlcg as stlcg
 from tqdm.auto import tqdm
 
 T = 40
