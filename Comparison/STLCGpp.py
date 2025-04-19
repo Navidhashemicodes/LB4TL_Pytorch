@@ -9,15 +9,12 @@ import torch
 import time
 import sys
 import pathlib
+import comparison.stlcgpp.formula as stlcg
+from tqdm.auto import tqdm
 
-RP_dir = str (pathlib.Path().resolve())
-sys.path.append( RP_dir + '/stlcg' )
-
-import stlcg
-
-
-T = 100
+T = 40
 Batch = 1
+Epochs = 100
 device = torch.device("cpu")
 
 def goal_1(x):
@@ -92,11 +89,9 @@ def robustness(x):
     rho = formula.robustness(inputs, pscale=pscale, scale=scale)
     return rho
 
-
-start_time =time.time()
-for i in range(1000):
-    
-    
+print("STLCG started")
+start_time = time.time()
+for i in tqdm(range(Epochs)):
     trajectory = torch.randn( T+1, 3 ).to(device)
     objective_value = robustness(trajectory)
 
