@@ -362,7 +362,7 @@ class Always(Temporal_Operator):
         h0 = torch.ones([x.shape[0], self.rnn_dim, x.shape[2]], device=x.device)*x[:,:1,:]
         count = 0.0
         # if self.interval is [a, np.inf), then the hidden state is a tuple (like in an LSTM)
-        if (self._interval[1] == np.inf) & (self._interval[0] > 0):
+        if (self._interval[1] == np.inf) and (self._interval[0] > 0):
             d0 = x[:,:1,:]
             return ((d0, h0.to(x.device)), count)
 
@@ -395,7 +395,7 @@ class Always(Temporal_Operator):
                 output = self.operation(input_, scale, dim=1, keepdim=True, agm=agm)       # [batch_size, 1, x_dim]
                 state = (output, None)
         else: # self.interval is [a, np.inf)
-            if (self._interval[1] == np.inf) & (self._interval[0] > 0):
+            if (self._interval[1] == np.inf) and (self._interval[0] > 0):
                 d0, h0 = h0
                 dh = torch.cat([d0, h0[:,:1,:]], dim=1)                             # [batch_size, 2, x_dim]
                 output = self.operation(dh, scale, dim=1, keepdim=True, agm=agm, distributed=distributed)               # [batch_size, 1, x_dim]
@@ -425,7 +425,7 @@ class Eventually(Temporal_Operator):
             self.b = self.b.cuda()
         h0 = torch.ones([x.shape[0], self.rnn_dim, x.shape[2]], device=x.device)*x[:,:1,:]
         count = 0.0
-        if (self._interval[1] == np.inf) & (self._interval[0] > 0):
+        if (self._interval[1] == np.inf) and (self._interval[0] > 0):
             d0 = x[:,:1,:]
             return ((d0, h0.to(x.device)), count)
         return (h0.to(x.device), count)
@@ -458,7 +458,7 @@ class Eventually(Temporal_Operator):
                 output = self.operation(input_, scale, dim=1, keepdim=True, agm=agm)       # [batch_size, 1, x_dim]
                 state = (output, None)
         else: # self.interval is [a, np.inf)
-            if (self._interval[1] == np.inf) & (self._interval[0] > 0):
+            if (self._interval[1] == np.inf) and (self._interval[0] > 0):
                 d0, h0 = h0
                 dh = torch.cat([d0, h0[:,:1,:]], dim=1)                             # [batch_size, 2, x_dim]
                 output = self.operation(dh, scale, dim=1, keepdim=True, agm=agm, distributed=distributed)               # [batch_size, 1, x_dim]
