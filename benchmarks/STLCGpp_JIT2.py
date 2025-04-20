@@ -91,7 +91,8 @@ def robustness(x):
 
     pscale = 1
     scale  = -1
-    rho = formula.robustness(x[0,:,0], pscale=pscale, scale=scale)
+    ## x is here only to generate the CG, its value is not important, we use the JIT version in code
+    rho = formula.robustness(x[0,:,0], pscale=pscale, scale=scale) 
 
     return rho
 
@@ -102,7 +103,7 @@ for i in range(0,20):
     
     T = 5*(i+1)
     Batch = 1000
-    sample_trajectory = torch.randn(1, T + 1, 3).to(device)
+    sample_trajectory = torch.randn(1, T + 1, 3).to(device)  ## this one is here only to generate the CG
 
     # Wrap robustness in a dummy nn.Module so it can be traced
 
