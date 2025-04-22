@@ -82,11 +82,11 @@ def robustness(x):
     x = torch.flip(x, (0,)).unsqueeze(0)
     formula1, inputs1 = eventually_goal1_then_eventually_goal2(x, x.shape[1]-1)
     formula2, inputs2 = always_safe(x)
-    formula = formula1 & formula2
+    formula = stlcg.And(formula1 , formula2)
     inputs = (inputs1, inputs2)
     pscale = 1
     scale  = -1
-    rho = formula.robustness(inputs, pscale=pscale, scale=scale)
+    rho = formula.robustness(x[0,:,0], pscale=pscale, scale=scale)
     return rho
 
 print("STLCG started")

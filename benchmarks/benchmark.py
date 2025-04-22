@@ -107,7 +107,7 @@ for i in range(0,20):
     args = {'T': T+1, 'd_state': 3, 'Batch': Batch, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
     
     my_formula = generate_formula(args)
-    neural_net = generate_network(my_formula, approximate=False, beta=10).to(args['device'])
+    neural_net = generate_network(my_formula, approximate=False, sparse=True, beta=10).to(args['device'])
 
     start_time = time.time()
     for i in tqdm(range(Epochs)):
@@ -124,5 +124,5 @@ for i in range(0,20):
 
     Times.append(times/Epochs)
     print(Times)
-    
+
 savemat("Times_stl2nn.mat", {"Times": np.array(Times, dtype=np.float64)})

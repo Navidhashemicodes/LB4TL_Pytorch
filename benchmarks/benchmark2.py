@@ -106,7 +106,7 @@ for i in range(0,20):
     args = {'T': T+1, 'd_state': 3, 'Batch': Batch, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
     
     my_formula = generate_formula(args)
-    neural_net = generate_network(my_formula, approximate=False, beta=10).to(args['device'])
+    neural_net = generate_network(my_formula, approximate=False, beta=10, sparse=True).to(args['device'])
 
     start_time = time.perf_counter()
     
