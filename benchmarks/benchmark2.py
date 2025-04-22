@@ -101,28 +101,27 @@ for i in range(0,20):
     
     T = 5*(i+1)
 
-    Epochs = 1000
-    device = torch.device("cpu")
-    Batch = 1
+    device = torch.device("cuda")
+    Batch = 1000
     args = {'T': T+1, 'd_state': 3, 'Batch': Batch, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
     
     my_formula = generate_formula(args)
     neural_net = generate_network(my_formula, approximate=False, beta=10).to(args['device'])
 
-    start_time = time.time()
-    for i in tqdm(range(Epochs)):
-        trajectory = torch.randn( Batch, T+1, 3 ).to(device)
-        objective_value1 = neural_net(trajectory)
+    start_time = time.perf_counter()
+    
+    trajectory = torch.randn( Batch, T+1, 3 ).to(device)
+    objective_value1 = neural_net(trajectory)
 
 
-    end_time = time.time()
+    end_time = time.perf_counter()
     
     times =  end_time-start_time
     print(times)
 
     print(f"\nTotal time: {times:.4f} seconds")
 
-    Times.append(times/Epochs)
+    Times.append(times/Batch)
     print(Times)
     
-savemat("Times_stl2nn.mat", {"Times": np.array(Times, dtype=np.float64)})
+savemat("Times_stl2nn2.mat", {"Times": np.array(Times, dtype=np.float64)})
