@@ -23,43 +23,43 @@ def generate_formula(args):
     FF = FormulaFactory(args)
 
 
-    M = torch.zeros((12, 3))  # 12 rows, 3 columns
+    M = torch.zeros((12, 2))  # 12 rows, 2 columns
     c = torch.zeros((12, 1))  # 12 rows, 1 column
 
-    M[0, :] = torch.tensor([-1, 0, 0], dtype=torch.float32)
+    M[0, :] = torch.tensor([-1, 0], dtype=torch.float32)
     c[0, 0] = torch.tensor([1], dtype=torch.float32)
 
-    M[1, :] = torch.tensor([1, 0, 0], dtype=torch.float32)
+    M[1, :] = torch.tensor([1, 0], dtype=torch.float32)
     c[1, 0] = torch.tensor([-4], dtype=torch.float32)
 
-    M[2, :] = torch.tensor([0, 1, 0], dtype=torch.float32)
+    M[2, :] = torch.tensor([0, 1], dtype=torch.float32)
     c[2, 0] = torch.tensor([-5], dtype=torch.float32)
 
-    M[3, :] = torch.tensor([0, -1, 0], dtype=torch.float32)
+    M[3, :] = torch.tensor([0, -1], dtype=torch.float32)
     c[3, 0] = torch.tensor([2], dtype=torch.float32)
 
-    M[4, :] = torch.tensor([1, 0, 0], dtype=torch.float32)
+    M[4, :] = torch.tensor([1, 0], dtype=torch.float32)
     c[4, 0] = torch.tensor([-3], dtype=torch.float32)
 
-    M[5, :] = torch.tensor([-1, 0, 0], dtype=torch.float32)
+    M[5, :] = torch.tensor([-1, 0], dtype=torch.float32)
     c[5, 0] = torch.tensor([4], dtype=torch.float32)
 
-    M[6, :] = torch.tensor([0, 1, 0], dtype=torch.float32)
+    M[6, :] = torch.tensor([0, 1], dtype=torch.float32)
     c[6, 0] = torch.tensor([0], dtype=torch.float32)
 
-    M[7, :] = torch.tensor([0, -1, 0], dtype=torch.float32)
+    M[7, :] = torch.tensor([0, -1], dtype=torch.float32)
     c[7, 0] = torch.tensor([1], dtype=torch.float32)
 
-    M[8, :] = torch.tensor([1, 0, 0], dtype=torch.float32)
+    M[8, :] = torch.tensor([1, 0], dtype=torch.float32)
     c[8, 0] = torch.tensor([-5], dtype=torch.float32)
 
-    M[9, :] = torch.tensor([-1, 0, 0], dtype=torch.float32)
+    M[9, :] = torch.tensor([-1, 0], dtype=torch.float32)
     c[9, 0] = torch.tensor([6], dtype=torch.float32)
 
-    M[10, :] = torch.tensor([0, 1, 0], dtype=torch.float32)
+    M[10, :] = torch.tensor([0, 1], dtype=torch.float32)
     c[10, 0] = torch.tensor([-3], dtype=torch.float32)
 
-    M[11, :] = torch.tensor([0, -1, 0], dtype=torch.float32)
+    M[11, :] = torch.tensor([0, -1], dtype=torch.float32)
     c[11, 0] = torch.tensor([4], dtype=torch.float32)
 
 
@@ -92,37 +92,44 @@ def generate_formula(args):
     return my_formula
 
 
+BUILD_FORMULA_TIMES = []
+ROBUSTNESS_TIMES = []
 
-
-
-Times = []
-for i in range(0,20):
-    
+for i in tqdm(range(0,15)):
     
     T = 5*(i+1)
 
-    Epochs = 1000
-    device = torch.device("cpu")
-    Batch = 1
-    args = {'T': T+1, 'd_state': 3, 'Batch': Batch, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
+    device = torch.device("cuda")
+    bs = 2000
+    args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
     
+    begin_time = time.perf_counter()
     my_formula = generate_formula(args)
-    neural_net = generate_network(my_formula, approximate=False, sparse=True, beta=10).to(args['device'])
-
-    start_time = time.time()
-    for i in tqdm(range(Epochs)):
-        trajectory = torch.randn( Batch, T+1, 3 ).to(device)
-        objective_value1 = neural_net(trajectory)
-
-
-    end_time = time.time()
+    neural_net = generate_network(my_formula, approximate=False, beta=10, sparse=True).to(args['device'])
+    end_time = time.perf_counter()
+    BUILD_FORMULA_TIMES.append((end_time - begin_time))
     
-    times =  end_time-start_time
-    print(times)
+    times = []
+    for _ in range(100):
+        trajectory = torch.randn( bs, T+1, 2).to(device)
+        begin_time = time.perf_counter()
+        objective_value1 = neural_net(trajectory)
+        end_time = time.perf_counter()
+        times.append((end_time - begin_time) / bs)
+    
+    ROBUSTNESS_TIMES.append(np.mean(times))
+    print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
+    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
+    
 
-    print(f"\nTotal time: {times:.4f} seconds")
 
-    Times.append(times/Epochs)
-    print(Times)
-
-savemat("Times_stl2nn.mat", {"Times": np.array(Times, dtype=np.float64)})
+import matplotlib.pyplot as plt   
+plt.plot(BUILD_FORMULA_TIMES, label='Formula Building Time')
+plt.show()
+plt.plot(ROBUSTNESS_TIMES, label='Robustness Time')
+plt.show()
+    
+import os
+save_path = 'results/'
+os.makedirs(save_path, exist_ok=True)
+torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'LB4TL_GPU_Batched.pt')
