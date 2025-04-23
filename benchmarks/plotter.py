@@ -1,8 +1,8 @@
 import torch
 load_path = 'results/'
 
-build_time_stlcgpp, robustness_time_stlcgpp= torch.load(load_path + 'STLCGpp_GPU_Batched.pt')
-build_time_lb4tl, robustness_time_lb4tl = torch.load(load_path + 'LB4TL_GPU_Batched.pt')
+build_time_stlcgpp, robustness_time_stlcgpp= torch.load(load_path + 'STLCGpp_GPU_Batched2.pt')
+build_time_lb4tl, robustness_time_lb4tl = torch.load(load_path + 'LB4TL_GPU_Batched2.pt')
 
 import matplotlib.pyplot as plt
 

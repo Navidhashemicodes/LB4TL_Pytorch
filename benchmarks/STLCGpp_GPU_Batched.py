@@ -88,10 +88,10 @@ ROBUSTNESS_TIMES = []
 
 import time
 
-for i in tqdm(range(0,20)):
+for i in tqdm(range(30,0, -1)):
    
     T = 5*(i+1)
-    bs = 3500
+    bs = 3000
     
     begin_time = time.perf_counter()
     formula = build_formula(T)
@@ -123,4 +123,4 @@ plt.show()
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'STLCGpp_GPU_Batched.pt')
+torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'STLCGpp_GPU_Batched2.pt')
