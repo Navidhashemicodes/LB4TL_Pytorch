@@ -30,7 +30,7 @@ def compute_box_dist_y3(x):
 
 def goal_1():
     dx = stlcg.Predicate("box_dist_x", predicate_function = compute_box_dist_x)
-    dy = stlcg.Predicate("box_dist_y", predicate_function = compute_box_dist_x)
+    dy = stlcg.Predicate("box_dist_y", predicate_function = compute_box_dist_y)
    
     within = stlcg.And(dx <= 0.5, dy <= 0.5)
    
