@@ -95,12 +95,13 @@ def generate_formula(args):
 BUILD_FORMULA_TIMES = []
 ROBUSTNESS_TIMES = []
 
-for i in tqdm(range(0,20)):
+for i in tqdm(range(0,2)):
     
     T = 5*(i+1)
 
-    device = torch.device("cuda")
-    bs = 3500
+    device = torch.device("cpu")
+    bs = 1
+    Epochs = 1000
     args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
     
     begin_time = time.perf_counter()
@@ -109,15 +110,14 @@ for i in tqdm(range(0,20)):
     end_time = time.perf_counter()
     BUILD_FORMULA_TIMES.append((end_time - begin_time))
     
-    times = []
-    for _ in range(100):
+        
+    begin_time = time.perf_counter()
+    for j in range(0,Epochs):
         trajectory = torch.randn( bs, T+1, 2).to(device)
-        begin_time = time.perf_counter()
         objective_value1 = neural_net(trajectory)
-        end_time = time.perf_counter()
-        times.append((end_time - begin_time) / bs)
+    end_time = time.perf_counter()
     
-    ROBUSTNESS_TIMES.append(np.mean(times))
+    ROBUSTNESS_TIMES.append((end_time-begin_time)/Epochs)
     print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
     print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
     
@@ -132,4 +132,4 @@ plt.show()
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'LB4TL_GPU_Batched.pt')
+torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'LB4TL_CPU_Epochs.pt')

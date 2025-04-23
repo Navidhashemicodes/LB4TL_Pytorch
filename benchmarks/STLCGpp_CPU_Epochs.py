@@ -78,7 +78,7 @@ def build_formula(T):
     formula = stlcg.And(formula1, formula2)
     return formula.robustness
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 Times = []
 from functools import partial
 
@@ -88,26 +88,26 @@ ROBUSTNESS_TIMES = []
 
 import time
 
-for i in tqdm(range(0,20)):
+for i in tqdm(range(0,15)):
    
     T = 5*(i+1)
-    bs = 3500
+    bs = 1
+    Epochs = 1000
     
     begin_time = time.perf_counter()
     formula = build_formula(T)
     end_time = time.perf_counter()
-    BUILD_FORMULA_TIMES.append((end_time - begin_time) / bs)
+    BUILD_FORMULA_TIMES.append((end_time - begin_time))
     
 
-    times = []
-    for _ in range(100):
+        
+    begin_time = time.perf_counter()
+    for j in range(0,Epochs):
         trajectory = torch.randn( bs, T+1, 2).to(device)
-        begin_time = time.perf_counter()
         objective_value = torch.vmap(formula)(trajectory)
-        end_time = time.perf_counter()
-        times.append((end_time - begin_time) / bs)
+    end_time = time.perf_counter()
     
-    ROBUSTNESS_TIMES.append(np.mean(times))
+    ROBUSTNESS_TIMES.append((end_time - begin_time) / Epochs)
     print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
     print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
     
@@ -123,4 +123,4 @@ plt.show()
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'STLCGpp_GPU_Batched.pt')
+torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'STLCGpp_CPU_Epochs.pt')
