@@ -6,7 +6,7 @@ This repository provides the Python implementation of the [LB4TL](https://github
 
 ## Requirements
 
-## Example
+## Examples
 
 ## Citation
 

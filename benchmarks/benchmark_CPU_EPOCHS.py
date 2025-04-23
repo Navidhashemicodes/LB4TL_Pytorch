@@ -95,13 +95,40 @@ def generate_formula(args):
 BUILD_FORMULA_TIMES = []
 ROBUSTNESS_TIMES = []
 
-for i in tqdm(range(0,2)):
+for i in tqdm(range(50,30,-5)):
     
     T = 5*(i+1)
 
     device = torch.device("cpu")
     bs = 1
-    Epochs = 1000
+    Epochs = 10000
+    args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
+    
+    begin_time = time.perf_counter()
+    my_formula = generate_formula(args)
+    neural_net = generate_network(my_formula, approximate=False, beta=10, sparse=True).to(args['device'])
+    end_time = time.perf_counter()
+    BUILD_FORMULA_TIMES.append((end_time - begin_time))
+    
+        
+    begin_time = time.perf_counter()
+    for j in range(0,Epochs):
+        trajectory = torch.randn( bs, T+1, 2).to(device)
+        objective_value1 = neural_net(trajectory)
+    end_time = time.perf_counter()
+    
+    ROBUSTNESS_TIMES.append((end_time-begin_time)/Epochs)
+    print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
+    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
+    
+    
+for i in tqdm(range(30,0, -1)):
+    
+    T = 5*(i+1)
+
+    device = torch.device("cpu")
+    bs = 1
+    Epochs = 10000
     args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
     
     begin_time = time.perf_counter()

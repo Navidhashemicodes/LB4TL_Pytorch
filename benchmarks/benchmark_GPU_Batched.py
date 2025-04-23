@@ -95,7 +95,7 @@ def generate_formula(args):
 BUILD_FORMULA_TIMES = []
 ROBUSTNESS_TIMES = []
 
-for i in tqdm(range(30,0,-1)):
+for i in tqdm(range(50,30,-5)):
     
     T = 5*(i+1)
 
@@ -121,7 +121,31 @@ for i in tqdm(range(30,0,-1)):
     print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
     print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
     
+for i in tqdm(range(30,0,-1)):
+    
+    T = 5*(i+1)
 
+    device = torch.device("cuda")
+    bs = 3000
+    args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
+    
+    begin_time = time.perf_counter()
+    my_formula = generate_formula(args)
+    neural_net = generate_network(my_formula, approximate=False, beta=10, sparse=True).to(args['device'])
+    end_time = time.perf_counter()
+    BUILD_FORMULA_TIMES.append((end_time - begin_time))
+    
+    times = []
+    for _ in range(100):
+        trajectory = torch.randn( bs, T+1, 2).to(device)
+        begin_time = time.perf_counter()
+        objective_value1 = neural_net(trajectory)
+        end_time = time.perf_counter()
+        times.append((end_time - begin_time) / bs)
+    
+    ROBUSTNESS_TIMES.append(np.mean(times))
+    print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
+    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
 
 import matplotlib.pyplot as plt   
 plt.plot(BUILD_FORMULA_TIMES, label='Formula Building Time')
@@ -132,4 +156,4 @@ plt.show()
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'LB4TL_GPU_Batched2.pt')
+torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'LB4TL_GPU_Batched.pt')

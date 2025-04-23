@@ -5,6 +5,7 @@ import pathlib
 import stlcgpp.formula as stlcg
 import numpy as np
 from tqdm.auto import tqdm
+import gc
 
 def compute_box_dist_x(x):
     return torch.abs(x[..., 0] - 5.5)
@@ -88,7 +89,7 @@ ROBUSTNESS_TIMES = []
 
 import time
 
-for i in tqdm(range(30,0, -1)):
+for i in tqdm(range(50,30, -5)):
    
     T = 5*(i+1)
     bs = 3000
@@ -111,7 +112,40 @@ for i in tqdm(range(30,0, -1)):
     print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
     print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
     
+    del formula
+    del trajectory
+    del objective_value
+    gc.collect()
+    torch.cuda.empty_cache()
     
+for i in tqdm(range(30,0, -1)):
+   
+    T = 5*(i+1)
+    bs = 3000
+    
+    begin_time = time.perf_counter()
+    formula = build_formula(T)
+    end_time = time.perf_counter()
+    BUILD_FORMULA_TIMES.append((end_time - begin_time) )
+    
+
+    times = []
+    for _ in range(100):
+        trajectory = torch.randn( bs, T+1, 2).to(device)
+        begin_time = time.perf_counter()
+        objective_value = torch.vmap(formula)(trajectory)
+        end_time = time.perf_counter()
+        times.append((end_time - begin_time) / bs)
+    
+    ROBUSTNESS_TIMES.append(np.mean(times))
+    print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
+    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
+    
+    del formula
+    del trajectory
+    del objective_value
+    gc.collect()
+    torch.cuda.empty_cache() 
 
 import matplotlib.pyplot as plt
 
@@ -123,4 +157,4 @@ plt.show()
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'STLCGpp_GPU_Batched2.pt')
+torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'STLCGpp_GPU_Batched.pt')
