@@ -152,8 +152,14 @@ def generate_network(formula:Formula, Network:Dict = None, approximate:bool = Fa
     assert idx == 0 and W_prev_layer.shape[-1] == 1, "The last layer should have only one output"
     weights.append(W_prev_layer)
     biases.append(torch.zeros(W_prev_layer.shape[-1]))
-
-    return NeuralNetwork(weights, biases, activations, approximate = approximate, beta = beta, sparse = sparse)
+    nn = NeuralNetwork(weights, biases, activations, approximate = approximate, beta = beta, sparse = sparse)
+    
+    # turn off gradient tracking for the neural network
+    nn.eval()
+    for param in nn.parameters():
+        param.requires_grad = False
+    
+    return nn
 
 
 if __name__ == '__main__':
