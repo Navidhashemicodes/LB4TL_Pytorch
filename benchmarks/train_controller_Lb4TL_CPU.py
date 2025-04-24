@@ -216,4 +216,4 @@ for seeds in range(1,101):
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([ Time , Epoch ], save_path + 'LB4TL_CPU_training_times.pt')
+torch.save([ Time , Epoch ], save_path + 'LB4TL_CPU_training_time.pt')

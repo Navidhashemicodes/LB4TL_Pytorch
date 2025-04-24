@@ -200,13 +200,14 @@ for seeds in range(1,101):
             print("Time limit exceeded the threshold. Breaking out of the loop.")
             break
 
-    Time.append(Time)
-    Epoch.append( epoch + 1 )
+    
     elapsed_time = time.time() - start_time
+    Time.append(elapsed_time)
+    Epoch.append( epoch + 1 )
     print("Training completed, with time = ", elapsed_time, " seconds, epochs = ", epoch + 1)
     
     
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([ Time , Epoch ], save_path + 'STLCGpp_CPU_training_times.pt')
+torch.save([ Time , Epoch ], save_path + 'STLCGpp_CPU_training_time.pt')

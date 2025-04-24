@@ -130,8 +130,9 @@ T = 40
 
 Time = []
 Epoch = []
-for seeds in range(1,21):
-    seed = 1
+for seeds in range(1,11):
+    
+    seed = seeds
     seed_everything(seed)
 
     controller_hidden_size = 30
@@ -152,7 +153,7 @@ for seeds in range(1,21):
 
     # Define the optimizer for f_network
     optimizer = optim.Adam(controller_net.parameters(), lr=0.001)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.5)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.9)
 
     max_time_seconds = 3600
     # Record the start time
@@ -195,13 +196,13 @@ for seeds in range(1,21):
                 break
     
         elapsed_time = time.time() - start_time
-        Time.append(elapsed_time)
-        Epoch.append(epoch+1)
         if elapsed_time > max_time_seconds:
             print("Time limit exceeded the threshold. Breaking out of the loop.")
             break
 
     elapsed_time = time.time() - start_time
+    Time.append(elapsed_time)
+    Epoch.append(epoch+1)
     print("Training completed, with time = ", elapsed_time, " seconds, epochs = ", epoch + 1)
     
 import os
