@@ -1,13 +1,11 @@
+import stlcgpp.formula as stlcg
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from scipy.io import loadmat
-from scipy.io import savemat
-import numpy as np
-import time
 import sys
-from tqdm.auto import tqdm
 import pathlib
+import time 
+from tqdm.auto import tqdm
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -15,13 +13,10 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from networks.neural_net_generator import generate_network
 from formula_factory import FormulaFactory
 
-###################################Accurate
-
 
 def generate_formula(args):
-    
+    T = args['T'] - 1
     FF = FormulaFactory(args)
-
 
     M = torch.zeros((12, 2))  # 12 rows, 2 columns
     c = torch.zeros((12, 1))  # 12 rows, 1 column
@@ -92,68 +87,38 @@ def generate_formula(args):
     return my_formula
 
 
-BUILD_FORMULA_TIMES = []
-ROBUSTNESS_TIMES = []
-
-for i in tqdm(range(50,30,-5)):
+def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None):
+    args = {'T': T+1, 'd_state': 2, 'Batch': 1, 'approximation_beta': beta, 'device': device, 'detailed_str_mode': False}
+    specification = generate_formula(args)
+    sample_trajectory = torch.randn(1, T+1, 2).to(device)
+    robustness_function = generate_network(specification, approximate=approximate, beta=beta, sparse=True).to(device)
+    robustness_function.eval()
+    if apply_JIT:
+        robustness_function = torch.jit.trace(robustness_function, (sample_trajectory))
+    return robustness_function
     
-    T = 5*(i+1)
-
-    device = torch.device("cuda")
-    bs = 3000
-    args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
+if __name__ == "__main__":
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+    T = 20
+    bs = 100
+    epochs = 1000
+    trajectory = torch.randn( bs, T+1, 2).to(device)
+    apply_JIT = False
+    rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device)
+    rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=False, device=device)
     
-    begin_time = time.perf_counter()
-    my_formula = generate_formula(args)
-    neural_net = generate_network(my_formula, approximate=False, beta=10, sparse=True).to(args['device'])
-    end_time = time.perf_counter()
-    BUILD_FORMULA_TIMES.append((end_time - begin_time))
+    start = time.perf_counter()
+    for i in tqdm(range(epochs)):
+        v2 = rf_without_jit(trajectory)
+    end = time.perf_counter()
+    print("Time taken for without JIT trace: ", end - start)
     
-    times = []
-    for _ in range(100):
-        trajectory = torch.randn( bs, T+1, 2).to(device)
-        begin_time = time.perf_counter()
-        objective_value1 = neural_net(trajectory)
-        end_time = time.perf_counter()
-        times.append((end_time - begin_time) / bs)
+    start = time.perf_counter()
+    for i in tqdm(range(epochs)):
+        v1 = rf_with_jit(trajectory)
+    end = time.perf_counter()
+    print("Time taken for with JIT trace: ", end - start)
     
-    ROBUSTNESS_TIMES.append(np.mean(times))
-    print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
-    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
     
-for i in tqdm(range(30,0,-1)):
+    print("Diff:", torch.max(torch.abs(v1 - v2)))
     
-    T = 5*(i+1)
-
-    device = torch.device("cuda")
-    bs = 3000
-    args = {'T': T+1, 'd_state': 2, 'Batch': bs, 'approximation_beta': 1, 'device': device, 'detailed_str_mode': False}
-    
-    begin_time = time.perf_counter()
-    my_formula = generate_formula(args)
-    neural_net = generate_network(my_formula, approximate=False, beta=10, sparse=True).to(args['device'])
-    end_time = time.perf_counter()
-    BUILD_FORMULA_TIMES.append((end_time - begin_time))
-    
-    times = []
-    for _ in range(100):
-        trajectory = torch.randn( bs, T+1, 2).to(device)
-        begin_time = time.perf_counter()
-        objective_value1 = neural_net(trajectory)
-        end_time = time.perf_counter()
-        times.append((end_time - begin_time) / bs)
-    
-    ROBUSTNESS_TIMES.append(np.mean(times))
-    print(f"Formula building time: {BUILD_FORMULA_TIMES[-1]:.4f} seconds")
-    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
-
-import matplotlib.pyplot as plt   
-plt.plot(BUILD_FORMULA_TIMES, label='Formula Building Time')
-plt.show()
-plt.plot(ROBUSTNESS_TIMES, label='Robustness Time')
-plt.show()
-    
-import os
-save_path = 'results/'
-os.makedirs(save_path, exist_ok=True)
-torch.save([BUILD_FORMULA_TIMES, ROBUSTNESS_TIMES], save_path + 'LB4TL_GPU_Batched.pt')
