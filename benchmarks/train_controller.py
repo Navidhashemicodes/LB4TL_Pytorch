@@ -10,8 +10,8 @@ import random
 from tqdm.auto import tqdm
 
 method = 'STLCGPP'
-# method = 'STLCGPP'
-device = "cpu" if torch.cuda.is_available() else "cpu"
+# method = 'LB4TL'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 num_epochs = 100000
 bs = 3
 T = 40
@@ -72,6 +72,7 @@ def run_trajectory(initial_state, env_model, controller_net, T, bs):
 
 Time = []
 Epoch = []
+Net = []
 seeds = 20
 for seed in tqdm(range(seeds)):
     seed_everything(seed)
@@ -90,7 +91,7 @@ for seed in tqdm(range(seeds)):
     optimizer = optim.Adam(controller_net.parameters(), lr=0.001)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.9)
 
-    max_time_seconds = 3600
+    max_time_seconds = 600
     # Record the start time
     start_time = time.time()
     theta_set = torch.linspace(-6*torch.pi/8, -4*torch.pi/8, 10000)
@@ -137,10 +138,11 @@ for seed in tqdm(range(seeds)):
     elapsed_time = time.time() - start_time
     Time.append(elapsed_time)
     Epoch.append(epoch + 1)
+    Net.append(controller_net)
     print("Training completed, with time = ", elapsed_time, " seconds, epochs = ", epoch + 1)
     
 
 import os
 save_path = 'results/'
 os.makedirs(save_path, exist_ok=True)
-torch.save([ Time , Epoch ], save_path + f'{method}_jit_{apply_JIT}_beta_{beta}_device_{device}_seeds_{seeds}.pt')
+torch.save([ Time , Epoch, Net ], save_path + f'{method}_jit_{apply_JIT}_beta_{beta}_device_{device}_seeds_{seeds}.pt')

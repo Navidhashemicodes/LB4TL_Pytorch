@@ -11,9 +11,9 @@ import pathlib
 
 # method = 'LB4TL'
 method = 'STLCGPP'
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cpu" if torch.cuda.is_available() else "cpu"
 epochs = 100
-bs = 10
+bs = 1000
 apply_JIT = True
 
 if method == 'LB4TL':
