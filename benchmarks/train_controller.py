@@ -25,6 +25,15 @@ if method == 'LB4TL':
 elif method == 'STLCGPP':
     import stlcgpp_formula
     get_robustness_function = stlcgpp_formula.get_robustness_function
+elif method == 'STLCG':
+    import stlcg_formula
+    get_robustness_function = stlcg_formula.get_robustness_function
+elif method == 'SOP':
+    import sop_formula
+    get_robustness_function = sop_formula.get_robustness_function
+elif method == 'EF':
+    import ef_formula
+    get_robustness_function = ef_formula.get_robustness_function
 else:
     raise ValueError("Invalid method. Choose either 'LB4TL' or 'STLCGPP'.")
 
@@ -83,8 +92,8 @@ for seed in tqdm(range(seeds)):
         nn.Linear(controller_hidden_size, 2)
     ).to(device)
 
-    exact_robust_function = get_robustness_function(T, approximate=False, beta=beta, apply_JIT=apply_JIT, device=device)
-    approximate_robust_function = get_robustness_function(T, approximate=True, beta=beta, apply_JIT=apply_JIT, device=device)
+    exact_robust_function = get_robustness_function(T, approximate=False, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs)
+    approximate_robust_function = get_robustness_function(T, approximate=True, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs)
 
     # Define the optimizer for f_network
     optimizer = optim.Adam(controller_net.parameters(), lr=0.001)

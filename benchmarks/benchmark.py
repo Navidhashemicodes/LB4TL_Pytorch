@@ -22,6 +22,15 @@ if method == 'LB4TL':
 elif method == 'STLCGPP':
     import stlcgpp_formula
     get_robustness_function = stlcgpp_formula.get_robustness_function
+elif method == 'STLCG':
+    import stlcg_formula
+    get_robustness_function = stlcg_formula.get_robustness_function
+elif method == 'SOP':
+    import sop_formula
+    get_robustness_function = sop_formula.get_robustness_function
+elif method == 'EF':
+    import ef_formula
+    get_robustness_function = ef_formula.get_robustness_function
 else:
     raise ValueError("Invalid method. Choose either 'LB4TL' or 'STLCGPP'.")
 
@@ -31,7 +40,7 @@ for i in tqdm(list(range(5, 0, -1))):
     
     T = 5*(i+1)
     print(f"Testing T = {T}")
-    exact_robust_function = get_robustness_function(T, approximate=False, beta=1.0, apply_JIT=apply_JIT, device=device)
+    exact_robust_function = get_robustness_function(T, approximate=False, beta=1.0, apply_JIT=apply_JIT, device=device, bs = bs)
     
     times = []
     for _ in tqdm(range(epochs)):

@@ -87,10 +87,10 @@ def generate_formula(args):
     return my_formula
 
 
-def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None):
+def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None, bs = 10):
     args = {'T': T+1, 'd_state': 2, 'Batch': 1, 'approximation_beta': beta, 'device': device, 'detailed_str_mode': False}
     specification = generate_formula(args)
-    sample_trajectory = torch.randn(1, T+1, 2).to(device)
+    sample_trajectory = torch.randn(bs, T+1, 2).to(device)
     robustness_function = generate_network(specification, approximate=approximate, beta=beta, sparse=True).to(device)
     robustness_function.eval()
     if apply_JIT:
@@ -104,8 +104,8 @@ if __name__ == "__main__":
     epochs = 1000
     trajectory = torch.randn( bs, T+1, 2).to(device)
     apply_JIT = False
-    rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device)
-    rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=False, device=device)
+    rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device, bs=bs)
+    rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=False, device=device, bs=bs)
     
     start = time.perf_counter()
     for i in tqdm(range(epochs)):

@@ -83,7 +83,7 @@ class RobustnessModule(nn.Module):
     def forward(self, x):
         return self.func(x)
 
-def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None):
+def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None, bs = 10):
     specification = build_formula(T, approximate=approximate, beta=beta)
     sample_trajectory = torch.randn(1, T+1, 2).to(device)
     rm = RobustnessModule(specification).to(device)
@@ -98,8 +98,8 @@ if __name__ == "__main__":
     epochs = 1000
     trajectory = torch.randn( bs, T+1, 2).to(device)
     apply_JIT = False
-    rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device)
-    rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=False, device=device)
+    rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device, bs=bs)
+    rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=False, device=device, bs=bs)
     
     start = time.perf_counter()
     for i in tqdm(range(epochs)):
