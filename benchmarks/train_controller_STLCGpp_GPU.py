@@ -11,7 +11,7 @@ import stlcgpp.formula as stlcg
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
-device = "cpu" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def model(s, a):
@@ -39,19 +39,6 @@ def seed_everything(seed=0):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-seed = 1
-seed_everything(seed)
-
-controller_hidden_size = 30
-controller_net = nn.Sequential(
-    nn.Linear(4, controller_hidden_size),
-    nn.ReLU(),
-    nn.Linear(controller_hidden_size, 2)
-).to(device)
-
-num_epochs = 100000
-bs = 3
-T = 40
 
 def run_trajectory(initial_state, env_model, controller_net, T, bs):
     trajectory = []
@@ -136,60 +123,88 @@ def generate_CG(T):
 
     return build_formula(T)
 
-specification = generate_CG(T)
 
-robustness_func_exact = torch.vmap(specification)
-approx_method = "logsumexp"  # or "softmax"
-robustness_func_approximate = torch.vmap(lambda x: specification(x, approx_method=approx_method, temperature=10.0))
+num_epochs = 100000
+bs = 3
+T = 40
 
-# Define the optimizer for f_network
-optimizer = optim.Adam(controller_net.parameters(), lr=0.001)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.5)
+Time = []
+Epoch = []
+for seeds in range(1,21):
+    seed = 1
+    seed_everything(seed)
 
-max_time_seconds = 3600
-# Record the start time
-start_time = time.time()
-theta_set = torch.linspace(-6*torch.pi/8, -4*torch.pi/8, 10000)
-theta_candidate_set = [-6*torch.pi/8, -5*torch.pi/8, -4*torch.pi/8]
-assert len(theta_candidate_set) == 3, "theta_candidate_set should have 3 elements."
-for epoch in range(num_epochs):
-    theta = torch.tensor(theta_candidate_set)
-    # theta = theta[torch.randint(0, len(theta_set), (bs,))]
-        
-    x_init, y_init = torch.zeros(bs) + 6, torch.zeros(bs) + 8
-    init_state = torch.stack([x_init, y_init, theta], dim=1).to(device)
+    controller_hidden_size = 30
+    controller_net = nn.Sequential(
+        nn.Linear(4, controller_hidden_size),
+        nn.ReLU(),
+        nn.Linear(controller_hidden_size, 2)
+    ).to(device)
+
+
+
+
+    specification = generate_CG(T)
     
-    trajectory = run_trajectory(init_state, model, controller_net, T, bs)
-    objective_value = robustness_func_approximate(trajectory[:, :, :-1]).mean(dim=0)
-    
-    # Backward pass and optimization to maximize the objective function
-    optimizer.zero_grad()
-    (-objective_value).backward()
-    optimizer.step()
-    scheduler.step()
+    robustness_func_exact = torch.vmap(specification)
+    approx_method = "logsumexp"  # or "softmax"
+    robustness_func_approximate = torch.vmap(lambda x: specification(x, approx_method=approx_method, temperature=10.0))
 
-    # Print the objective value during training
-    print(f'Epoch {epoch + 1}, Objective Value: {objective_value.item()}')
+    # Define the optimizer for f_network
+    optimizer = optim.Adam(controller_net.parameters(), lr=0.001)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.5)
+
+    max_time_seconds = 3600
+    # Record the start time
+    start_time = time.time()
+    theta_set = torch.linspace(-6*torch.pi/8, -4*torch.pi/8, 10000)
+    theta_candidate_set = [-6*torch.pi/8, -5*torch.pi/8, -4*torch.pi/8]
+    assert len(theta_candidate_set) == 3, "theta_candidate_set should have 3 elements."
+    for epoch in range(num_epochs):
+        theta = torch.tensor(theta_candidate_set)
+        # theta = theta[torch.randint(0, len(theta_set), (bs,))]
+            
+        x_init, y_init = torch.zeros(bs) + 6, torch.zeros(bs) + 8
+        init_state = torch.stack([x_init, y_init, theta], dim=1).to(device)
+        
+        trajectory = run_trajectory(init_state, model, controller_net, T, bs)
+        objective_value = robustness_func_approximate(trajectory[:, :, :-1]).mean(dim=0)
+        
+        # Backward pass and optimization to maximize the objective function
+        optimizer.zero_grad()
+        (-objective_value).backward()
+        optimizer.step()
+        scheduler.step()
+        
+        # Print the objective value during training
+        print(f'Epoch {epoch + 1}, Objective Value: {objective_value.item()}')
+        
+        if epoch % 10 == 0:
+        
+            bs_test = 100
+            theta_random = torch.tensor(theta_set[torch.randint(0, len(theta_set), (bs_test,))])
+            x_init_test, y_init_test = torch.zeros(bs_test) + 6, torch.zeros(bs_test) + 8
+            init_state_test = torch.stack([x_init_test, y_init_test, theta_random], dim=1).to(device)
+            
+            with torch.no_grad():
+                trajectory_test = run_trajectory(init_state_test, model, controller_net, T, bs_test)
+                exact_robustness = robustness_func_exact(trajectory_test[:, :, :-1]).min(dim=0).values
+                print(f'Epoch {epoch + 1}, Exact Robustness: {exact_robustness.item()} vs Approximate Robustness: {objective_value.item()}')
+            if exact_robustness > 0:
+                print("Found a robust solution. Breaking out of the loop.")
+                break
     
-    if epoch % 10 == 0:
-        
-        bs_test = 100
-        theta_random = torch.tensor(theta_set[torch.randint(0, len(theta_set), (bs_test,))])
-        x_init_test, y_init_test = torch.zeros(bs_test) + 6, torch.zeros(bs_test) + 8
-        init_state_test = torch.stack([x_init_test, y_init_test, theta_random], dim=1).to(device)
-        
-        with torch.no_grad():
-            trajectory_test = run_trajectory(init_state_test, model, controller_net, T, bs_test)
-            exact_robustness = robustness_func_exact(trajectory_test[:, :, :-1]).min(dim=0).values
-            print(f'Epoch {epoch + 1}, Exact Robustness: {exact_robustness.item()} vs Approximate Robustness: {objective_value.item()}')
-        if exact_robustness > 0:
-            print("Found a robust solution. Breaking out of the loop.")
+        elapsed_time = time.time() - start_time
+        Time.append(elapsed_time)
+        Epoch.append(epoch+1)
+        if elapsed_time > max_time_seconds:
+            print("Time limit exceeded the threshold. Breaking out of the loop.")
             break
-    
-    elapsed_time = time.time() - start_time
-    if elapsed_time > max_time_seconds:
-        print("Time limit exceeded the threshold. Breaking out of the loop.")
-        break
 
-elapsed_time = time.time() - start_time
-print("Training completed, with time = ", elapsed_time, " seconds, epochs = ", epoch + 1)
+    elapsed_time = time.time() - start_time
+    print("Training completed, with time = ", elapsed_time, " seconds, epochs = ", epoch + 1)
+    
+import os
+save_path = 'results/'
+os.makedirs(save_path, exist_ok=True)
+torch.save([Time, Epoch], save_path + 'STLCGpp_GPU_training_time.pt')
