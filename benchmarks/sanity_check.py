@@ -14,13 +14,13 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from networks.neural_net_generator import generate_network
 from formula_factory import FormulaFactory
 
-device = "cpu" if torch.cuda.is_available() else "cpu"
-epochs = 100
-bs = 10
-T = 20
-apply_JIT = False
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
-approximate = True
+bs = 10
+T = 5
+apply_JIT = True
+
+approximate = False
 beta = 10.0
 
 import lb4tl_formula
@@ -42,8 +42,6 @@ robustness_func_sop = get_robustness_function_sop(T, approximate=approximate, be
 import ef_formula
 get_robustness_function_ef = ef_formula.get_robustness_function
 robustness_func_ef = get_robustness_function_ef(T, approximate=approximate, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs)
-
-device = "cpu" if torch.cuda.is_available() else "cpu"
 
 random_trajectory = torch.randn((bs, T+1, 2), device=device, requires_grad=True)
 
