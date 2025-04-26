@@ -15,7 +15,7 @@ class RobustnessModule(torch.nn.Module):
     def forward(self, x):
         # return self.func(x)
         res = torch.stack([self.func(x[i])[0, 0, 0] for i in range(self.bs)], dim=0)
-        print("res shape:", res.shape)
+        # print("res shape:", res.shape)
         return res 
 
 def goal_1(x):

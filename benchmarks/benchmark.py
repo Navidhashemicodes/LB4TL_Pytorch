@@ -9,11 +9,11 @@ import sys
 from tqdm.auto import tqdm
 import pathlib
 
-# method = 'LB4TL'
-method = 'STLCGPP'
-device = "cpu" if torch.cuda.is_available() else "cpu"
-epochs = 100
-bs = 1000
+method = 'LB4TL'
+# method = 'STLCG'
+device = "cuda" if torch.cuda.is_available() else "cpu"
+epochs =100
+bs = 3000
 apply_JIT = True
 
 if method == 'LB4TL':
@@ -36,7 +36,8 @@ else:
 
 ROBUSTNESS_TIMES = []
 
-for i in tqdm(list(range(5, 0, -1))):
+for i in tqdm(list(range(50, 30, -5)) + list(range(30, 0, -2))):
+# for i in tqdm(list(range(16, 0, -2))):
     
     T = 5*(i+1)
     print(f"Testing T = {T}")
@@ -50,7 +51,7 @@ for i in tqdm(list(range(5, 0, -1))):
         end_time = time.perf_counter()
         times.append((end_time - begin_time) / bs)
     ROBUSTNESS_TIMES.append(np.mean(times))
-    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.4f} seconds")
+    print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.10f} seconds")
     
 import matplotlib.pyplot as plt   
 plt.plot(ROBUSTNESS_TIMES, label='Robustness Time')
