@@ -9,13 +9,13 @@ import pathlib
 import random
 from tqdm.auto import tqdm
 
-method = 'STLCGPP'
-# method = 'LB4TL'
+
+method = 'STLCG'
 device = "cuda" if torch.cuda.is_available() else "cpu"
 num_epochs = 100000
 bs = 3
 T = 40
-apply_JIT = True
+apply_JIT = False
 beta = 10.0
 
 

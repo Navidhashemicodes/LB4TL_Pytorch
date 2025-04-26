@@ -91,6 +91,7 @@ class RobustnessModule(nn.Module):
     
     def forward(self, x):
         return self.func(x)
+        
 
 
 def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None, bs = 10):
@@ -107,10 +108,10 @@ def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, 
     
 
 if __name__ == "__main__":
-    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
-    T = 5
-    bs = 1
-    epochs = 1000
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    T = 255
+    bs = 1000
+    epochs = 10
     trajectory = torch.randn( bs, T+1, 2).to(device)
     apply_JIT = False
     rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device, bs=bs)
