@@ -11,3 +11,4 @@ __pycache__/
 *.fig
 *.pt
 formulas/__pycache__/*
+*.pptx
