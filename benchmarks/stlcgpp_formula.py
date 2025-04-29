@@ -75,15 +75,6 @@ def build_formula(T, approximate=False, beta=10.0):
         return lambda x: formula.robustness(x, approx_method=approx_method, temperature=beta)
     return formula.robustness
 
-class RobustnessModuleWithBatch(nn.Module):
-    def __init__(self, func, bs):
-        super(RobustnessModuleWithBatch, self).__init__()
-        self.func = func
-        self.bs = bs
-    
-    def forward(self, x):
-        return torch.stack([self.func(x[i]) for i in range(self.bs)])
-
 class RobustnessModule(nn.Module):
     def __init__(self, func):
         super(RobustnessModule, self).__init__()
@@ -91,25 +82,18 @@ class RobustnessModule(nn.Module):
     
     def forward(self, x):
         return self.func(x)
-        
-
 
 def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, device=None, bs = 10):
     specification = build_formula(T, approximate=approximate, beta=beta)
+    sample_trajectory = torch.randn(1, T+1, 2).to(device)
+    rm = RobustnessModule(specification).to(device)
     if apply_JIT:
-        sample_trajectory = torch.randn(bs, T+1, 2).to(device)
-        rm = RobustnessModuleWithBatch(specification, bs).to(device)
-        rm = torch.jit.trace(rm, (sample_trajectory)).to(device)
-        return rm
-    else:
-        
-        rm = RobustnessModule(specification).to(device)
-        return torch.vmap(rm)
-    
+        rm = torch.jit.trace(rm, (sample_trajectory[0])).to(device)
+    return torch.vmap(rm)
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    T = 255
+    T = 100
     bs = 1000
     epochs = 10
     trajectory = torch.randn( bs, T+1, 2).to(device)
@@ -121,13 +105,13 @@ if __name__ == "__main__":
     for i in tqdm(range(epochs)):
         v2 = rf_without_jit(trajectory)
     end = time.perf_counter()
-    print("Time taken without JIT trace: ", end - start)
+    print("Time taken for without JIT trace: ", end - start)
     
     start = time.perf_counter()
     for i in tqdm(range(epochs)):
         v1 = rf_with_jit(trajectory)
     end = time.perf_counter()
-    print("Time taken with JIT trace: ", end - start)
+    print("Time taken for with JIT trace: ", end - start)
     
     
     print("Diff:", torch.max(torch.abs(v1 - v2)))

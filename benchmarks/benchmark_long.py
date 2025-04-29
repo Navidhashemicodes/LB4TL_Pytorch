@@ -9,37 +9,27 @@ import sys
 from tqdm.auto import tqdm
 import pathlib
 
-# method = 'LB4TL'
-method = 'STLCG'
+method = 'LB4TL_long'
+# method = 'STLCGPP_long'
 device = "cpu" if torch.cuda.is_available() else "cpu"
-epochs =100
+epochs =1000
 bs = 1
-apply_JIT = True
+apply_JIT = False
 
-if method == 'LB4TL':
-    import lb4tl_formula
-    get_robustness_function = lb4tl_formula.get_robustness_function
-elif method == 'STLCGPP':
-    import stlcgpp_formula
-    get_robustness_function = stlcgpp_formula.get_robustness_function
-elif method == 'STLCG':
-    import stlcg_formula
-    get_robustness_function = stlcg_formula.get_robustness_function
-elif method == 'SOP':
-    import sop_formula
-    get_robustness_function = sop_formula.get_robustness_function
-elif method == 'EF':
-    import ef_formula
-    get_robustness_function = ef_formula.get_robustness_function
+if method == 'LB4TL_long':
+    import lb4tl_formula_long
+    get_robustness_function = lb4tl_formula_long.get_robustness_function
+elif method == 'STLCGPP_long':
+    import stlcgpp_formula_long
+    get_robustness_function = stlcgpp_formula_long.get_robustness_function
 else:
     raise ValueError("Invalid method. Choose either 'LB4TL' or 'STLCGPP'.")
 
 ROBUSTNESS_TIMES = []
 
-# for i in tqdm(list(range(50, 30, -5)) + list(range(30, 0, -2))):
-for i in tqdm(list(range(16, 0, -2))):
+for i in tqdm(list(range(6, 0, -1))):
     
-    T = 5*(i+1)
+    T = 20*(i+1)
     print(f"Testing T = {T}")
     exact_robust_function = get_robustness_function(T, approximate=False, beta=1.0, apply_JIT=apply_JIT, device=device, bs = bs)
     
@@ -54,7 +44,7 @@ for i in tqdm(list(range(16, 0, -2))):
     print(f"Robustness time: {ROBUSTNESS_TIMES[-1]:.10f} seconds")
     
 import matplotlib.pyplot as plt   
-plt.plot(ROBUSTNESS_TIMES, label='Robustness Time')
+plt.plot(ROBUSTNESS_TIMES[::-1], label='Robustness Time')
 plt.show()
 
 import os

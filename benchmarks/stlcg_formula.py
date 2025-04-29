@@ -15,6 +15,7 @@ class RobustnessModule(torch.nn.Module):
     def forward(self, x):
         # return self.func(x)
         res = torch.stack([self.func(x[i])[0, 0, 0] for i in range(self.bs)], dim=0)
+        # print("res shape:", res.shape)
         return res 
 
 def goal_1(x):
@@ -118,20 +119,23 @@ def get_robustness_function(T, approximate=False, beta=10.0, apply_JIT = False, 
     
 
 if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    T = 5
-    bs = 2
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+    T = 40
+    bs = 1
     epochs = 1000
     trajectory = torch.randn( bs, T+1, 2).to(device)
     apply_JIT = False
     
-    rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=apply_JIT, device=device, bs=bs)
+    # rf_without_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=apply_JIT, device=device, bs=bs)
     
-    start = time.perf_counter()
-    for i in tqdm(range(epochs)):
-        v2 = rf_without_jit(trajectory)
-    end = time.perf_counter()
-    print("Time taken without JIT trace: ", end - start)
+    # start = time.perf_counter()
+    # for i in tqdm(range(epochs)):
+    #     v2 = rf_without_jit(trajectory)
+    # end = time.perf_counter()
+    # print("Time taken without JIT trace: ", end - start)
+    
+    # exit()
+    
     
     
     rf_with_jit = get_robustness_function(T, approximate=False, beta=10, apply_JIT=True, device=device, bs=bs)
@@ -142,5 +146,5 @@ if __name__ == "__main__":
     print("Time taken with JIT trace: ", end - start)
     
     
-    print("Diff:", torch.max(torch.abs(v1 - v2)))
+    # print("Diff:", torch.max(torch.abs(v1 - v2)))
     

@@ -10,10 +10,11 @@ import random
 from tqdm.auto import tqdm
 
 
-method = 'STLCG'
+method = 'SOP'
 device = "cuda" if torch.cuda.is_available() else "cpu"
 num_epochs = 100000
 bs = 3
+bs_test = 100
 T = 40
 apply_JIT = False
 beta = 10.0
@@ -77,15 +78,19 @@ def run_trajectory(initial_state, env_model, controller_net, T, bs):
         trajectory.append(state)
     return torch.stack(trajectory, dim=1)
 
-
+exact_robust_function = get_robustness_function(T, approximate=False, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs_test)
+approximate_robust_function = get_robustness_function(T, approximate=True, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs)
 
 Time = []
 Epoch = []
 Net = []
 seeds = 20
 for seed in tqdm(range(seeds)):
-    seed_everything(seed)
+# for seed in tqdm(range(4,20)):
     
+    
+    
+    seed_everything(seed)
     controller_hidden_size = 30
     controller_net = nn.Sequential(
         nn.Linear(4, controller_hidden_size),
@@ -93,8 +98,7 @@ for seed in tqdm(range(seeds)):
         nn.Linear(controller_hidden_size, 2)
     ).to(device)
 
-    exact_robust_function = get_robustness_function(T, approximate=False, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs)
-    approximate_robust_function = get_robustness_function(T, approximate=True, beta=beta, apply_JIT=apply_JIT, device=device, bs=bs)
+    
 
     # Define the optimizer for f_network
     optimizer = optim.Adam(controller_net.parameters(), lr=0.001)
